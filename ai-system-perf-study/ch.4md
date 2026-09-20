@@ -1,0 +1,42 @@
+NVIDIA Magnum IO
+
+NCCL
+
+- NVIDIA Collective Communications Library : 여러 GPU가 서로 데이터를 주고받게 해주는 라이브러리
+- training workload : 각 GPU가 자기 데이터로 gradient를 계산한 뒤 all-reduce로 평균을 내서 모든 GPU가 같은 weight 업데이트를 함
+- serving workload : PyTorch의 `torch.distributed`, vLLM 같은 프레임워크가 내부적으로 NCCL을 호출하기 때문에 유저는 `backend="nccl"` 정도를 지정 or TP ≥ 2부터 따로 옵션을 입력하지 않아도 자동 사용됨
+- NCCL 확인 커맨드
+
+
+RDMA
+
+- CPU를 거치지 않고 한 컴퓨터의 메모리에서 다른 컴퓨터의 메모리로 직접 읽고 씀
+- InfiniBand
+- 이더넷/TCP와 완전히 별개의 프로토콜 스택과 물리 계층을 씁니다. 전용 HCA(Host Channel Adapter), 전용 스위치, 전용 케이블이 필요하고, 주소 체계도 IP가 아니라 LID/GID를 씁니다.
+- 그만큼 지연이 낮고, SHARP 같은 in-network computing 기능도 여기서만 됩니다
+
+NIXL : NVIDIA Inference Xfer Library
+- Dynamo : NVIDIA Inference Framework
+
+```
+Dynamo
+  ├─ Router / Scheduler
+  ├─ KV Cache Manager   ← "어떤 캐시를 어디로 옮길지" 결정
+  │     └─ NIXL         ← "실제로 옮기는" 실행 계층
+  │           └─ UCX, GPUDirect RDMA, GDS
+  └─ Worker (vLLM, TensorRT-LLM 등을 백엔드로 사용)
+```
+
+### KV Cache Offloading
+
+- 메모리 계층 간(수직 이동)
+- Dynamo의 KV Cache Manager
+- 하위로 갈수록 비용이 싸짐 & KV Cache Offloading 속도가 느려짐
+
+![[Pasted image 20260917231115.png]]
+
+### KV Cache Transfer
+- 수평 이동
+
+
+
